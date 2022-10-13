@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+{% csrf_token %}
+<div id="app">
+  <v-app>
+    <v-layout justify-center>
+      <v-flex sm12 md10 lg8>
+        <h1 v-html="title"></h1>
+        <v-row>          
+          <v-col cols="6">
+            <v-text-field 
+              v-model="newMessage"
+              label="Text"
+              :rules="rules"
+              counter
+              maxlength="50"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="3">
+            <v-text-field 
+            v-model="newWritter"
+            label="User"
+          ></v-text-field>
+          </v-col>
+          <v-col cols="2">
+            <v-btn @click="send" class="primary">Send</v-btn>
+          </v-col>
+          
+        </v-row>
+        <v-card>
+          <v-data-table
+            :headers="headers"
+            :items="messages"
+            :hide-default-footer="true"
+            :disable-pagination="true"
+          >
+          </v-data-table>
+        </v-card>
+      </v-flex>
+    </v-layout>
+  </v-app>
+</div>
+<script>
+  new Vue({
+    el: "#app",
+    vuetify: new Vuetify(),
+    data() {
+      return {
+        title: "Poor Man's Twitter",
+        messages: [],
+        newWritter: "",
+        newMessage: "",
+        rules: [v => v.length <= 50 || 'Max 50 characters'],
+        headers: [
+          {
+            text: "Twitter_Text",
+            value: "message",
+            sortable: false,
+            width: "40%"
+          },
+          {
+            text: "Name",
+            value: "writter",
+            width: "30%"
+            
+          },          
+          {
+            text: "DATE",
+            value: "when",
+            width: "30%"
+          }
+        ]
+      }
+    },
+    watch: {
+      messages: function() {
+        this.messages.forEach(message => {
+          message.when = new Date(message.created_at).toLocaleString();
+        });
+      }
+    },
+    created: function() {
+      this.fetchAll();
+    },
+    methods: {
+      fetchAll() {
+        console.log("fetch all");
+        axios.get('/api/messages')
+          .then(({data}) => {
+            this.messages = data.messages;
+
+          })
+          .catch(console.log)
+      },
+      send() {
+        axios.post('/api/messages/', {
+          writter: this.newWritter,
+          message: this.newMessage
+        }).then(({data}) => {
+          this.messages.push(data.newMessage);
+          this.newWritter = "";
+          this.newMessage = "";
+        }).catch(console.log)
+      }
+    }
+  });
+  Vue.use(Vuetify);
+</script>
+{% endblock %}
+
